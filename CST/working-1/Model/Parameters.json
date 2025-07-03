@@ -1,0 +1,35 @@
+{
+    "parameters": [
+        {
+            "expr": "31.5",
+            "name": "clover_radius",
+            "value": "31.5"
+        },
+        {
+            "expr": "2.4e9",
+            "name": "freq",
+            "value": "2.4e9"
+        },
+        {
+            "expr": "(c / freq) * 100",
+            "name": "lambda_",
+            "value": "12.5"
+        },
+        {
+            "expr": "3e8",
+            "name": "c",
+            "value": "3e8"
+        },
+        {
+            "expr": "0.5",
+            "name": "wire_radius",
+            "value": "0.5"
+        },
+        {
+            "expr": "20",
+            "name": "lobe_radius",
+            "value": "20"
+        }
+    ],
+    "version": 1
+}

@@ -1,0 +1,815 @@
+'# MWS Version: Version 2024.5 - Jun 14 2024 - ACIS 33.0.1 -
+
+'# length = mm
+'# frequency = GHz
+'# time = ns
+'# frequency range: fmin = 1 fmax = 3
+'# created = '[VERSION]2024.5|33.0.1|20240614[/VERSION]
+
+
+'@ use template: Antenna - Wire.cfg
+
+'[VERSION]2024.5|33.0.1|20240614[/VERSION]
+'set the units
+With Units
+    .SetUnit "Length", "mm"
+    .SetUnit "Frequency", "GHz"
+    .SetUnit "Voltage", "V"
+    .SetUnit "Resistance", "Ohm"
+    .SetUnit "Inductance", "nH"
+    .SetUnit "Temperature",  "degC"
+    .SetUnit "Time", "ns"
+    .SetUnit "Current", "A"
+    .SetUnit "Conductance", "S"
+    .SetUnit "Capacitance", "pF"
+End With
+
+ThermalSolver.AmbientTemperature "0"
+
+'----------------------------------------------------------------------------
+
+'set the frequency range
+Solver.FrequencyRange "1", "3"
+
+'----------------------------------------------------------------------------
+
+Plot.DrawBox True
+
+With Background
+     .Type "Normal"
+     .Epsilon "1.0"
+     .Mu "1.0"
+     .XminSpace "0.0"
+     .XmaxSpace "0.0"
+     .YminSpace "0.0"
+     .YmaxSpace "0.0"
+     .ZminSpace "0.0"
+     .ZmaxSpace "0.0"
+End With
+
+With Boundary
+     .Xmin "expanded open"
+     .Xmax "expanded open"
+     .Ymin "expanded open"
+     .Ymax "expanded open"
+     .Zmin "expanded open"
+     .Zmax "expanded open"
+     .Xsymmetry "none"
+     .Ysymmetry "none"
+     .Zsymmetry "none"
+End With
+
+' switch on FD-TET setting for accurate farfields
+
+FDSolver.ExtrudeOpenBC "True"
+
+Mesh.FPBAAvoidNonRegUnite "True"
+Mesh.ConsiderSpaceForLowerMeshLimit "False"
+Mesh.MinimumStepNumber "5"
+Mesh.RatioLimit "20"
+Mesh.AutomeshRefineAtPecLines "True", "10"
+
+With MeshSettings
+     .SetMeshType "Hex"
+     .Set "RatioLimitGeometry", "20"
+     .Set "EdgeRefinementOn", "1"
+     .Set "EdgeRefinementRatio", "10"
+End With
+
+With MeshSettings
+     .SetMeshType "Tet"
+     .Set "VolMeshGradation", "1.5"
+     .Set "SrfMeshGradation", "1.5"
+End With
+
+With MeshSettings
+     .SetMeshType "HexTLM"
+     .Set "RatioLimitGeometry", "20"
+End With
+
+PostProcess1D.ActivateOperation "vswr", "true"
+PostProcess1D.ActivateOperation "yz-matrices", "true"
+
+With MeshSettings
+     .SetMeshType "Srf"
+     .Set "Version", 1
+End With
+IESolver.SetCFIEAlpha "1.000000"
+
+With FarfieldPlot
+	.ClearCuts ' lateral=phi, polar=theta
+	.AddCut "lateral", "0", "1"
+	.AddCut "lateral", "90", "1"
+	.AddCut "polar", "90", "1"
+End With
+
+'----------------------------------------------------------------------------
+
+Dim sDefineAt As String
+sDefineAt = "1;2;2.4;3"
+Dim sDefineAtName As String
+sDefineAtName = "1;2;2.4;3"
+Dim sDefineAtToken As String
+sDefineAtToken = "f="
+Dim aFreq() As String
+aFreq = Split(sDefineAt, ";")
+Dim aNames() As String
+aNames = Split(sDefineAtName, ";")
+
+Dim nIndex As Integer
+For nIndex = LBound(aFreq) To UBound(aFreq)
+
+Dim zz_val As String
+zz_val = aFreq (nIndex)
+Dim zz_name As String
+zz_name = sDefineAtToken & aNames (nIndex)
+
+' Define E-Field Monitors
+With Monitor
+    .Reset
+    .Name "e-field ("& zz_name &")"
+    .Dimension "Volume"
+    .Domain "Frequency"
+    .FieldType "Efield"
+    .MonitorValue  zz_val
+    .Create
+End With
+
+' Define H-Field Monitors
+With Monitor
+    .Reset
+    .Name "h-field ("& zz_name &")"
+    .Dimension "Volume"
+    .Domain "Frequency"
+    .FieldType "Hfield"
+    .MonitorValue  zz_val
+    .Create
+End With
+
+' Define Power flow Monitors
+With Monitor
+    .Reset
+    .Name "power ("& zz_name &")"
+    .Dimension "Volume"
+    .Domain "Frequency"
+    .FieldType "Powerflow"
+    .MonitorValue  zz_val
+    .Create
+End With
+
+' Define Power loss Monitors
+With Monitor
+    .Reset
+    .Name "loss ("& zz_name &")"
+    .Dimension "Volume"
+    .Domain "Frequency"
+    .FieldType "Powerloss"
+    .MonitorValue  zz_val
+    .Create
+End With
+
+' Define Farfield Monitors
+With Monitor
+    .Reset
+    .Name "farfield ("& zz_name &")"
+    .Domain "Frequency"
+    .FieldType "Farfield"
+    .MonitorValue  zz_val
+    .ExportFarfieldSource "False"
+    .Create
+End With
+
+Next
+
+'----------------------------------------------------------------------------
+
+With MeshSettings
+     .SetMeshType "Tet"
+     .Set "Version", 1%
+End With
+
+With Mesh
+     .MeshType "Tetrahedral"
+End With
+
+'set the solver type
+ChangeSolverType("HF Frequency Domain")
+
+'----------------------------------------------------------------------------
+
+'@ define curve arc: curve1:arc1
+
+'[VERSION]2024.5|33.0.1|20240614[/VERSION]
+With Arc
+     .Reset 
+     .Name "arc1" 
+     .Curve "curve1" 
+     .Orientation "Clockwise" 
+     .XCenter "-0" 
+     .YCenter "0" 
+     .X1 "0.0" 
+     .Y1 "lambda_/4" 
+     .X2 "0.0" 
+     .Y2 "0.0" 
+     .Angle "90" 
+     .UseAngle "True" 
+     .Segments "0" 
+     .Create
+End With
+
+'@ define curve line: curve1:line1
+
+'[VERSION]2024.5|33.0.1|20240614[/VERSION]
+With Line
+     .Reset 
+     .Name "line1" 
+     .Curve "curve1" 
+     .X1 "-0" 
+     .Y1 "lambda_/4" 
+     .X2 "0" 
+     .Y2 "0" 
+     .Create
+End With
+
+
+'@ pick mid point
+
+'[VERSION]2024.5|33.0.1|20240614[/VERSION]
+Pick.PickCurveMidpointFromId "curve1:arc1", "1"
+
+'@ unpick mid point
+
+'[VERSION]2024.5|33.0.1|20240614[/VERSION]
+Pick.UnpickCurveMidpointFromId "curve1:arc1", "1"
+
+'@ define curve line: curve1:line2
+
+'[VERSION]2024.5|33.0.1|20240614[/VERSION]
+With Line
+     .Reset 
+     .Name "line2" 
+     .Curve "curve1" 
+     .X1 "lambda_/4" 
+     .Y1 "0.0" 
+     .X2 "1" 
+     .Y2 "0.0" 
+     .Create
+End With
+
+
+'@ clear picks
+
+'[VERSION]2024.5|33.0.1|20240614[/VERSION]
+Pick.ClearAllPicks
+
+'@ transform curve: rotate curve1
+
+'[VERSION]2024.5|33.0.1|20240614[/VERSION]
+With Transform 
+     .Reset 
+     .Name "curve1" 
+     .Origin "Free" 
+     .Center "0", "0", "0" 
+     .Angle "0", "45", "0" 
+     .MultipleObjects "False" 
+     .GroupObjects "False" 
+     .Repetitions "1" 
+     .MultipleSelection "False" 
+     .Transform "Curve", "Rotate" 
+End With
+
+'@ transform curve: rotate curve1
+
+'[VERSION]2024.5|33.0.1|20240614[/VERSION]
+With Transform 
+     .Reset 
+     .Name "curve1" 
+     .Origin "Free" 
+     .Center "0", "0", "0" 
+     .Angle "0", "0", "90" 
+     .MultipleObjects "True" 
+     .GroupObjects "False" 
+     .Repetitions "1" 
+     .MultipleSelection "False" 
+     .Destination "" 
+     .Transform "Curve", "Rotate" 
+End With
+
+'@ transform curve: rotate curve1
+
+'[VERSION]2024.5|33.0.1|20240614[/VERSION]
+With Transform 
+     .Reset 
+     .Name "curve1" 
+     .Origin "Free" 
+     .Center "0", "0", "0" 
+     .Angle "0", "0", "180" 
+     .MultipleObjects "True" 
+     .GroupObjects "False" 
+     .Repetitions "1" 
+     .MultipleSelection "False" 
+     .Destination "" 
+     .Transform "Curve", "Rotate" 
+End With
+
+'@ new component: component1
+
+'[VERSION]2024.5|33.0.1|20240614[/VERSION]
+Component.New "component1"
+
+'@ define cylinder: component1:solid1
+
+'[VERSION]2024.5|33.0.1|20240614[/VERSION]
+With Cylinder 
+     .Reset 
+     .Name "solid1" 
+     .Component "component1" 
+     .Material "PEC" 
+     .OuterRadius "0.8" 
+     .InnerRadius "0" 
+     .Axis "z" 
+     .Zrange "-0.4", "-1" 
+     .Xcenter "0" 
+     .Ycenter "0" 
+     .Segments "0" 
+     .Create 
+End With
+
+'@ define cylinder: component1:solid2
+
+'[VERSION]2024.5|33.0.1|20240614[/VERSION]
+With Cylinder 
+     .Reset 
+     .Name "solid2" 
+     .Component "component1" 
+     .Material "PEC" 
+     .OuterRadius "0.6" 
+     .InnerRadius "0" 
+     .Axis "z" 
+     .Zrange "-0.1", "1" 
+     .Xcenter "0" 
+     .Ycenter "-0" 
+     .Segments "0" 
+     .Create 
+End With
+
+'@ define curve circle: curve1:circle1
+
+'[VERSION]2024.5|33.0.1|20240614[/VERSION]
+With Circle
+     .Reset 
+     .Name "circle1" 
+     .Curve "curve1" 
+     .Radius "0.25" 
+     .Xcenter "0.0" 
+     .Ycenter "0.0" 
+     .Segments "0" 
+     .Create
+End With
+
+'@ transform curve: rotate curve1:circle1
+
+'[VERSION]2024.5|33.0.1|20240614[/VERSION]
+With Transform 
+     .Reset 
+     .Name "curve1:circle1" 
+     .Origin "Free" 
+     .Center "0", "0", "0" 
+     .Angle "90", "0", "0" 
+     .MultipleObjects "False" 
+     .GroupObjects "False" 
+     .Repetitions "1" 
+     .MultipleSelection "False" 
+     .Transform "Curve", "Rotate" 
+End With
+
+'@ define sweepprofile: component1:solid3
+
+'[VERSION]2024.5|33.0.1|20240614[/VERSION]
+With SweepCurve
+     .Reset 
+     .Name "solid3" 
+     .Component "component1" 
+     .Material "PEC" 
+     .Twistangle "0.0" 
+     .Taperangle "0.0" 
+     .ProjectProfileToPathAdvanced "True" 
+     .CutEndOff "True" 
+     .DeleteProfile "True" 
+     .DeletePath "True" 
+     .Path "curve1:arc1" 
+     .Curve "curve1:circle1" 
+     .Create
+End With
+
+'@ define curve circle: curve1:circle1
+
+'[VERSION]2024.5|33.0.1|20240614[/VERSION]
+With Circle
+     .Reset 
+     .Name "circle1" 
+     .Curve "curve1" 
+     .Radius "0.25" 
+     .Xcenter "0.0" 
+     .Ycenter "0.0" 
+     .Segments "0" 
+     .Create
+End With
+
+'@ transform curve: rotate curve1:circle1
+
+'[VERSION]2024.5|33.0.1|20240614[/VERSION]
+With Transform 
+     .Reset 
+     .Name "curve1:circle1" 
+     .Origin "Free" 
+     .Center "0", "0", "0" 
+     .Angle "270", "0", "0" 
+     .MultipleObjects "False" 
+     .GroupObjects "False" 
+     .Repetitions "1" 
+     .MultipleSelection "False" 
+     .Transform "Curve", "Rotate" 
+End With
+
+'@ define sweepprofile: component1:solid4
+
+'[VERSION]2024.5|33.0.1|20240614[/VERSION]
+With SweepCurve
+     .Reset 
+     .Name "solid4" 
+     .Component "component1" 
+     .Material "PEC" 
+     .Twistangle "0.0" 
+     .Taperangle "0.0" 
+     .ProjectProfileToPathAdvanced "True" 
+     .CutEndOff "True" 
+     .DeleteProfile "True" 
+     .DeletePath "True" 
+     .Path "curve1:arc1_1_1" 
+     .Curve "curve1:circle1" 
+     .Create
+End With
+
+'@ boolean add shapes: component1:solid3, component1:solid4
+
+'[VERSION]2024.5|33.0.1|20240614[/VERSION]
+Solid.Add "component1:solid3", "component1:solid4"
+
+'@ boolean add shapes: component1:solid1, component1:solid3
+
+'[VERSION]2024.5|33.0.1|20240614[/VERSION]
+Solid.Add "component1:solid1", "component1:solid3"
+
+'@ boolean add shapes: component1:solid2, component1:solid1
+
+'[VERSION]2024.5|33.0.1|20240614[/VERSION]
+Solid.Add "component1:solid2", "component1:solid1"
+
+'@ pick edge
+
+'[VERSION]2024.5|33.0.1|20240614[/VERSION]
+Pick.PickEdgeFromId "component1:solid2", "40", "34"
+
+'@ pick face
+
+'[VERSION]2024.5|33.0.1|20240614[/VERSION]
+Pick.PickFaceFromId "component1:solid2", "33"
+
+'@ define discrete face port: 1
+
+'[VERSION]2024.5|33.0.1|20240614[/VERSION]
+With DiscreteFacePort 
+     .Reset 
+     .PortNumber "1" 
+     .Type "SParameter"
+     .Label ""
+     .Folder ""
+     .Impedance "50.0"
+     .VoltageAmplitude "1.0"
+     .CurrentAmplitude "1.0"
+     .Monitor "True"
+     .CenterEdge "True"
+     .SetP1 "True", "0.8", "0", "-0.4"
+     .SetP2 "True", "0.8", "0", "-0.1"
+     .LocalCoordinates "False"
+     .InvertDirection "False"
+     .UseProjection "False"
+     .ReverseProjection "False"
+     .FaceType "Linear"
+     .Create 
+End With
+
+'@ define material: Copper (annealed)
+
+'[VERSION]2024.5|33.0.1|20240614[/VERSION]
+With Material
+     .Reset
+     .Name "Copper (annealed)"
+     .Folder ""
+     .FrqType "static"
+     .Type "Normal"
+     .SetMaterialUnit "Hz", "mm"
+     .Epsilon "1"
+     .Mu "1.0"
+     .Kappa "5.8e+007"
+     .TanD "0.0"
+     .TanDFreq "0.0"
+     .TanDGiven "False"
+     .TanDModel "ConstTanD"
+     .KappaM "0"
+     .TanDM "0.0"
+     .TanDMFreq "0.0"
+     .TanDMGiven "False"
+     .TanDMModel "ConstTanD"
+     .DispModelEps "None"
+     .DispModelMu "None"
+     .DispersiveFittingSchemeEps "Nth Order"
+     .DispersiveFittingSchemeMu "Nth Order"
+     .UseGeneralDispersionEps "False"
+     .UseGeneralDispersionMu "False"
+     .FrqType "all"
+     .Type "Lossy metal"
+     .SetMaterialUnit "GHz", "mm"
+     .Mu "1.0"
+     .Kappa "5.8e+007"
+     .Rho "8930.0"
+     .ThermalType "Normal"
+     .ThermalConductivity "401.0"
+     .SpecificHeat "390", "J/K/kg"
+     .MetabolicRate "0"
+     .BloodFlow "0"
+     .VoxelConvection "0"
+     .MechanicsType "Isotropic"
+     .YoungsModulus "120"
+     .PoissonsRatio "0.33"
+     .ThermalExpansionRate "17"
+     .Colour "1", "1", "0"
+     .Wireframe "False"
+     .Reflection "False"
+     .Allowoutline "True"
+     .Transparentoutline "False"
+     .Transparency "0"
+     .Create
+End With
+
+'@ change material: component1:solid2 to: Copper (annealed)
+
+'[VERSION]2024.5|33.0.1|20240614[/VERSION]
+Solid.ChangeMaterial "component1:solid2", "Copper (annealed)"
+
+'@ define frequency domain solver parameters
+
+'[VERSION]2024.5|33.0.1|20240614[/VERSION]
+Mesh.SetCreator "High Frequency" 
+
+With FDSolver
+     .Reset 
+     .SetMethod "Tetrahedral", "General purpose" 
+     .OrderTet "Second" 
+     .OrderSrf "First" 
+     .Stimulation "All", "1" 
+     .ResetExcitationList 
+     .AutoNormImpedance "False" 
+     .NormingImpedance "50" 
+     .ModesOnly "False" 
+     .ConsiderPortLossesTet "True" 
+     .SetShieldAllPorts "False" 
+     .AccuracyHex "1e-6" 
+     .AccuracyTet "1e-4" 
+     .AccuracySrf "1e-3" 
+     .LimitIterations "False" 
+     .MaxIterations "0" 
+     .SetCalcBlockExcitationsInParallel "True", "True", "" 
+     .StoreAllResults "False" 
+     .StoreResultsInCache "False" 
+     .UseHelmholtzEquation "True" 
+     .LowFrequencyStabilization "True" 
+     .Type "Auto" 
+     .MeshAdaptionHex "False" 
+     .MeshAdaptionTet "True" 
+     .AcceleratedRestart "True" 
+     .FreqDistAdaptMode "Distributed" 
+     .NewIterativeSolver "True" 
+     .TDCompatibleMaterials "False" 
+     .ExtrudeOpenBC "True" 
+     .SetOpenBCTypeHex "Default" 
+     .SetOpenBCTypeTet "Default" 
+     .AddMonitorSamples "True" 
+     .CalcPowerLoss "True" 
+     .CalcPowerLossPerComponent "False" 
+     .SetKeepSolutionCoefficients "MonitorsAndMeshAdaptation" 
+     .UseDoublePrecision "False" 
+     .UseDoublePrecision_ML "True" 
+     .MixedOrderSrf "False" 
+     .MixedOrderTet "False" 
+     .PreconditionerAccuracyIntEq "0.15" 
+     .MLFMMAccuracy "Default" 
+     .MinMLFMMBoxSize "0.3" 
+     .UseCFIEForCPECIntEq "True" 
+     .UseEnhancedCFIE2 "True" 
+     .UseFastRCSSweepIntEq "false" 
+     .UseSensitivityAnalysis "False" 
+     .UseEnhancedNFSImprint "True" 
+     .UseFastDirectFFCalc "False" 
+     .RemoveAllStopCriteria "Hex"
+     .AddStopCriterion "All S-Parameters", "0.01", "2", "Hex", "True"
+     .AddStopCriterion "Reflection S-Parameters", "0.01", "2", "Hex", "False"
+     .AddStopCriterion "Transmission S-Parameters", "0.01", "2", "Hex", "False"
+     .RemoveAllStopCriteria "Tet"
+     .AddStopCriterion "All S-Parameters", "0.01", "2", "Tet", "True"
+     .AddStopCriterion "Reflection S-Parameters", "0.01", "2", "Tet", "False"
+     .AddStopCriterion "Transmission S-Parameters", "0.01", "2", "Tet", "False"
+     .AddStopCriterion "All Probes", "0.05", "2", "Tet", "True"
+     .RemoveAllStopCriteria "Srf"
+     .AddStopCriterion "All S-Parameters", "0.01", "2", "Srf", "True"
+     .AddStopCriterion "Reflection S-Parameters", "0.01", "2", "Srf", "False"
+     .AddStopCriterion "Transmission S-Parameters", "0.01", "2", "Srf", "False"
+     .SweepMinimumSamples "3" 
+     .SetNumberOfResultDataSamples "1001" 
+     .SetResultDataSamplingMode "Automatic" 
+     .SweepWeightEvanescent "1.0" 
+     .AccuracyROM "1e-4" 
+     .AddSampleInterval "", "", "1", "Automatic", "True" 
+     .AddSampleInterval "", "", "", "Automatic", "False" 
+     .MPIParallelization "False"
+     .UseDistributedComputing "False"
+     .NetworkComputingStrategy "RunRemote"
+     .NetworkComputingJobCount "3"
+     .UseParallelization "True"
+     .MaxCPUs "1024"
+     .MaximumNumberOfCPUDevices "2"
+End With
+
+With IESolver
+     .Reset 
+     .UseFastFrequencySweep "True" 
+     .UseIEGroundPlane "False" 
+     .SetRealGroundMaterialName "" 
+     .CalcFarFieldInRealGround "False" 
+     .RealGroundModelType "Auto" 
+     .PreconditionerType "Auto" 
+     .ExtendThinWireModelByWireNubs "False" 
+     .ExtraPreconditioning "False" 
+End With
+
+With IESolver
+     .SetFMMFFCalcStopLevel "0" 
+     .SetFMMFFCalcNumInterpPoints "6" 
+     .UseFMMFarfieldCalc "True" 
+     .SetCFIEAlpha "1.000000" 
+     .LowFrequencyStabilization "False" 
+     .LowFrequencyStabilizationML "True" 
+     .Multilayer "False" 
+     .SetiMoMACC_I "0.0001" 
+     .SetiMoMACC_M "0.0001" 
+     .DeembedExternalPorts "True" 
+     .SetOpenBC_XY "True" 
+     .OldRCSSweepDefintion "False" 
+     .SetRCSOptimizationProperties "True", "100", "0.00001" 
+     .SetAccuracySetting "Custom" 
+     .CalculateSParaforFieldsources "True" 
+     .ModeTrackingCMA "True" 
+     .NumberOfModesCMA "3" 
+     .StartFrequencyCMA "-1.0" 
+     .SetAccuracySettingCMA "Default" 
+     .FrequencySamplesCMA "0" 
+     .SetMemSettingCMA "Auto" 
+     .CalculateModalWeightingCoefficientsCMA "True" 
+     .DetectThinDielectrics "True" 
+End With
+
+'@ define solver simplifications
+
+'[VERSION]2024.5|33.0.1|20240614[/VERSION]
+With SolverParameter 
+     .SolverType "Frequency domain solver", "Tetrahedral" 
+     .IgnoreLossyMetals "True" 
+     .IgnoreLossyDielectrics "False" 
+     .IgnoreNonlinearMaterials "False" 
+     .IgnoreLossyMetalsForWires "False" 
+     .UseThinWireModel "True" 
+     .UseZeroWireRadius "False" 
+End With
+
+'@ define frequency domain solver parameters
+
+'[VERSION]2024.5|33.0.1|20240614[/VERSION]
+Mesh.SetCreator "High Frequency" 
+
+With FDSolver
+     .Reset 
+     .SetMethod "Tetrahedral", "General purpose" 
+     .OrderTet "Second" 
+     .OrderSrf "First" 
+     .Stimulation "All", "1" 
+     .ResetExcitationList 
+     .AutoNormImpedance "False" 
+     .NormingImpedance "50" 
+     .ModesOnly "False" 
+     .ConsiderPortLossesTet "True" 
+     .SetShieldAllPorts "False" 
+     .AccuracyHex "1e-6" 
+     .AccuracyTet "1e-4" 
+     .AccuracySrf "1e-3" 
+     .LimitIterations "False" 
+     .MaxIterations "0" 
+     .SetCalcBlockExcitationsInParallel "True", "True", "" 
+     .StoreAllResults "False" 
+     .StoreResultsInCache "False" 
+     .UseHelmholtzEquation "True" 
+     .LowFrequencyStabilization "True" 
+     .Type "Auto" 
+     .MeshAdaptionHex "False" 
+     .MeshAdaptionTet "False" 
+     .AcceleratedRestart "True" 
+     .FreqDistAdaptMode "Distributed" 
+     .NewIterativeSolver "True" 
+     .TDCompatibleMaterials "False" 
+     .ExtrudeOpenBC "True" 
+     .SetOpenBCTypeHex "Default" 
+     .SetOpenBCTypeTet "Default" 
+     .AddMonitorSamples "True" 
+     .CalcPowerLoss "True" 
+     .CalcPowerLossPerComponent "False" 
+     .SetKeepSolutionCoefficients "MonitorsAndMeshAdaptation" 
+     .UseDoublePrecision "False" 
+     .UseDoublePrecision_ML "True" 
+     .MixedOrderSrf "False" 
+     .MixedOrderTet "False" 
+     .PreconditionerAccuracyIntEq "0.15" 
+     .MLFMMAccuracy "Default" 
+     .MinMLFMMBoxSize "0.3" 
+     .UseCFIEForCPECIntEq "True" 
+     .UseEnhancedCFIE2 "True" 
+     .UseFastRCSSweepIntEq "false" 
+     .UseSensitivityAnalysis "False" 
+     .UseEnhancedNFSImprint "True" 
+     .UseFastDirectFFCalc "False" 
+     .RemoveAllStopCriteria "Hex"
+     .AddStopCriterion "All S-Parameters", "0.01", "2", "Hex", "True"
+     .AddStopCriterion "Reflection S-Parameters", "0.01", "2", "Hex", "False"
+     .AddStopCriterion "Transmission S-Parameters", "0.01", "2", "Hex", "False"
+     .RemoveAllStopCriteria "Tet"
+     .AddStopCriterion "All S-Parameters", "0.01", "2", "Tet", "True"
+     .AddStopCriterion "Reflection S-Parameters", "0.01", "2", "Tet", "False"
+     .AddStopCriterion "Transmission S-Parameters", "0.01", "2", "Tet", "False"
+     .AddStopCriterion "All Probes", "0.05", "2", "Tet", "True"
+     .RemoveAllStopCriteria "Srf"
+     .AddStopCriterion "All S-Parameters", "0.01", "2", "Srf", "True"
+     .AddStopCriterion "Reflection S-Parameters", "0.01", "2", "Srf", "False"
+     .AddStopCriterion "Transmission S-Parameters", "0.01", "2", "Srf", "False"
+     .SweepMinimumSamples "3" 
+     .SetNumberOfResultDataSamples "1001" 
+     .SetResultDataSamplingMode "Automatic" 
+     .SweepWeightEvanescent "1.0" 
+     .AccuracyROM "1e-4" 
+     .AddSampleInterval "", "", "1", "Automatic", "True" 
+     .AddSampleInterval "", "", "", "Automatic", "False" 
+     .MPIParallelization "False"
+     .UseDistributedComputing "False"
+     .NetworkComputingStrategy "RunRemote"
+     .NetworkComputingJobCount "3"
+     .UseParallelization "True"
+     .MaxCPUs "1024"
+     .MaximumNumberOfCPUDevices "2"
+End With
+
+With IESolver
+     .Reset 
+     .UseFastFrequencySweep "True" 
+     .UseIEGroundPlane "False" 
+     .SetRealGroundMaterialName "" 
+     .CalcFarFieldInRealGround "False" 
+     .RealGroundModelType "Auto" 
+     .PreconditionerType "Auto" 
+     .ExtendThinWireModelByWireNubs "False" 
+     .ExtraPreconditioning "False" 
+End With
+
+With IESolver
+     .SetFMMFFCalcStopLevel "0" 
+     .SetFMMFFCalcNumInterpPoints "6" 
+     .UseFMMFarfieldCalc "True" 
+     .SetCFIEAlpha "1.000000" 
+     .LowFrequencyStabilization "False" 
+     .LowFrequencyStabilizationML "True" 
+     .Multilayer "False" 
+     .SetiMoMACC_I "0.0001" 
+     .SetiMoMACC_M "0.0001" 
+     .DeembedExternalPorts "True" 
+     .SetOpenBC_XY "True" 
+     .OldRCSSweepDefintion "False" 
+     .SetRCSOptimizationProperties "True", "100", "0.00001" 
+     .SetAccuracySetting "Custom" 
+     .CalculateSParaforFieldsources "True" 
+     .ModeTrackingCMA "True" 
+     .NumberOfModesCMA "3" 
+     .StartFrequencyCMA "-1.0" 
+     .SetAccuracySettingCMA "Default" 
+     .FrequencySamplesCMA "0" 
+     .SetMemSettingCMA "Auto" 
+     .CalculateModalWeightingCoefficientsCMA "True" 
+     .DetectThinDielectrics "True" 
+End With
+

@@ -1,0 +1,13 @@
+{
+   "Author": "Aryan M",
+   "Comment": "",
+   "Last Problem Type": "High Frequency",
+   "Last Solver Type": "HF Frequency Domain",
+   "Last Solver Type Abb": "f",
+   "Mesh Cells": "77,733",
+   "Mesh Type": "Tetrahedral",
+   "Modeler Unique ID": "5:working-1.cst?4ae32286825e8b21502b27811c8e03ce?17862:numberofparameters=3:port=1>mode=1>zre=0>zim=0:::c?freq?lambda_",
+   "ProjectVersion": "'# MWS Version: Version 2024.5 - Jun 14 2024 - ACIS 33.0.1 -",
+   "Results": "Frequency Domain: S-Parameter",
+   "Version": "3"
+}
